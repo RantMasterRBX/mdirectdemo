@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineStream - Stream Instantly</title>
+    <style>
+        /* --- Reset & Global Styles --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #111116;
+            color: #ffffff;
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        /* --- Header Styles --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 4%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .logo {
+            color: #ff2a5f;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .view-toggle-btn {
+            background-color: #ff2a5f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s;
+        }
+
+        .view-toggle-btn:hover {
+            background-color: #e02452;
+            transform: scale(1.05);
+        }
+
+        /* --- Hero Banner --- */
+        .hero {
+            position: relative;
+            height: 55vw;
+            max-height: 550px;
+            min-height: 350px;
+            background: linear-gradient(to right, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0) 100%), 
+                        url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            padding: 0 4%;
+            margin-bottom: 30px;
+        }
+
+        .hero-content {
+            max-width: 600px;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 15px;
+            line-height: 1.1;
+        }
+
+        .hero-desc {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: #cccccc;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .btn-play {
+            background-color: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 12px 28px;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .btn-play:hover {
+            background-color: #ff2a5f;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        /* --- Content Section Container --- */
+        .main-container {
+            padding: 0 4%;
+        }
+
+        .section-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* --- Dynamic Grid / List Layout Styles --- */
+        .content-container {
+            display: grid;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* Grid View Layout */
+        .content-container.grid-view {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+
+        /* List View Layout */
+        .content-container.list-view {
+            grid-template-columns: 1fr;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            background-color: #1a1a24;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; /* Indicates clickability */
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(255, 42, 95, 0.3);
+        }
+
+        .thumbnail-box {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #2a2a35;
+        }
+
+        .thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Visual Play Indicator Overlay on Hover */
+        .thumbnail-box::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            font-size: 20px;
+            color: white;
+            background: rgba(255, 42, 95, 0.9);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-left: 4px; 
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 2;
+        }
+
+        .card:hover .thumbnail-box::after {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .card-details {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: #ff2a5f;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .card-desc {
+            font-size: 13px;
+            color: #aaaaaa;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* --- Specific Override Rules for List View --- */
+        .content-container.list-view .card {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            height: 120px;
+        }
+
+        .content-container.list-view .thumbnail-box {
+            width: 213px;
+            min-width: 213px;
+            height: 120px;
+            padding-top: 0;
+        }
+
+        .content-container.list-view .card-details {
+            flex-grow: 1;
+            padding: 0 20px;
+        }
+
+        .content-container.list-view .card-title {
+            font-size: 18px;
+            white-space: normal;
+        }
+
+        .content-container.list-view .card-desc {
+            -webkit-line-clamp: 1;
+        }
+
+        /* --- Video Player Modal Box Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        /* When modal is toggled active via JS */
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 900px;
+            background-color: #000000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(255, 42, 95, 0.4);
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-top: 56.25%; /* Fixed widescreen 16:9 box */
+        }
+
+        .video-wrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            border: none;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2100;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #ff2a5f;
+            transform: scale(1.1);
+        }
+
+        /* --- Responsive Tweaks --- */
+        @media (max-width: 600px) {
+            .content-container.list-view .card {
+                height: auto;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .content-container.list-view .thumbnail-box {
+                width: 100%;
+                padding-top: 56.25%;
+                height: auto;
+            }
+            .content-container.list-view .card-details {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">CineStream</div>
+        <button class="view-toggle-btn" id="toggleViewBtn">Switch to List View</button>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Echoes of the Cosmos</h1>
+            <p class="hero-desc">Bound by gravity but driven by curiosity, a crew of deep-space researchers stumbles across an ancient terrestrial frequency emitting from the heart of a dead star.</p>
+            <button class="btn-play" id="heroPlayBtn" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4">▶ Play Trailer</button>
+        </div>
+    </section>
+
+    <main class="main-container">
+        <h2 class="section-title">Trending Content</h2>
+        
+        <div class="content-container grid-view" id="contentStream">
+            
+            <div class="card" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+                <div class="thumbnail-box">
+                    <img class="thumbnail" src="https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=500&q=80" alt="Thumbnail">
+                </div>
+                <div class="card-details">
+                    <div class="card-title">Shadow Over Neon</div>
+                    <div class="card-meta">Sci-Fi • 2h 14m</div>
+                    <div class="card-desc">In a dystopian future run by cybernetic syndicates, a rogue detective uncovers a conspiracy hidden in plain sight.</div>
+                </div>
+            </div>
+
+            <div class="card" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4">
+                <div class="thumbnail-box">
+                    <img class="thumbnail" src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=500&q=80" alt="Thumbnail">
+                </div>
+                <div class="card-details">
+                    <div class="card-title">The Silent Peak</div>
+                    <div class="card-meta">Thriller • 1h 45m</div>
+                    <div class="card-desc">A survival expert finds herself trapped on an isolated mountain ridge during a severe alpine blizzard with unexpected company.</div>
+                </div>
+            </div>
+
+            <div class="card" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4">
+                <div class="thumbnail-box">
+                    <img class="thumbnail" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80" alt="Thumbnail">
+                </div>
+                <div class="card-details">
+                    <div class="card-title">Chasing Horizons</div>
+                    <div class="card-meta">Documentary • 45m</div>
+                    <div class="card-desc">Explore the most breathtaking, untouched landscapes remaining on Earth alongside environmental photographers.</div>
+                </div>
+            </div>
+
+            <div class="card" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4">
+                <div class="thumbnail-box">
+                    <img class="thumbnail" src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=500&q=80" alt="Thumbnail">
+                </div>
+                <div class="card-details">
+                    <div class="card-title">Beneath the Surface</div>
+                    <div class="card-meta">Mystery • 1h 58m</div>
+                    <div class="card-desc">When a deep-sea drilling expedition breaches an uncharted underwater cavern, they discover they aren't alone.</div>
+                </div>
+            </div>
+
+            <div class="card" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4">
+                <div class="thumbnail-box">
+                    <img class="thumbnail" src="https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=500&q=80" alt="Thumbnail">
+                </div>
+                <div class="card-details">
+                    <div class="card-title">The Digital Canvas</div>
+                    <div class="card-meta">Docuseries • Season 1</div>
+                    <div class="card-desc">An in-depth look at how computer graphics and virtual intelligence transformed the landscape of modern visual arts.</div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="videoModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn">&times;</button>
+            <div class="video-wrapper">
+                <video id="modalVideo" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element Pickers
+        const toggleBtn = document.getElementById('toggleViewBtn');
+        const contentContainer = document.getElementById('contentStream');
+        const videoModal = document.getElementById('videoModal');
+        const modalVideo = document.getElementById('modalVideo');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const heroPlayBtn = document.getElementById('heroPlayBtn');
+        const contentCards = document.querySelectorAll('.card');
+
+        /* --- 1. Toggle View Layout Logic (Grid vs List) --- */
+        toggleBtn.addEventListener('click', () => {
+            if (contentContainer.classList.contains('grid-view')) {
+                contentContainer.classList.remove('grid-view');
+                contentContainer.classList.add('list-view');
+                toggleBtn.textContent = 'Switch to Grid View';
+            } else {
+                contentContainer.classList.remove('list-view');
+                contentContainer.classList.add('grid-view');
+                toggleBtn.textContent = 'Switch to List View';
+            }
+        });
+
+        /* --- 2. Video Playback & Modal Control Functions --- */
+        function openAndPlayVideo(videoUrl) {
+            if (!videoUrl) return;
+            
+            // Inject URL target into video source element and load asset
+            modalVideo.src = videoUrl;
+            modalVideo.load();
+            
+            // Make modal layer visible on window surface
+            videoModal.classList.add('active');
+            
+            // Automatically begin item playback
+            modalVideo.play().catch(error => {
+                console.log("Autoplay caught or blocked by browser standard guidelines:", error);
+            });
+        }
+
+        function shutdownAndCloseVideo() {
+            videoModal.classList.remove('active');
+            modalVideo.pause();
+            modalVideo.src = ""; // Flushes buffer and halts hidden asset data stream
+        }
+
+        /* --- 3. UI Click Event Attachments --- */
+        
+        // Listen to clicks on any standard streaming cards
+        contentCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const targetsVideo = card.getAttribute('data-video-url');
+                openAndPlayVideo(targetsVideo);
+            });
+        });
+
+        // Listen to click on main billboard play button
+        heroPlayBtn.addEventListener('click', () => {
+            const targetsVideo = heroPlayBtn.getAttribute('data-video-url');
+            openAndPlayVideo(targetsVideo);
+        });
+
+        // Close via close icon click
+        closeModalBtn.addEventListener('click', shutdownAndCloseVideo);
+
+        // Close by clicking outside the boundary of active player content area
+        videoModal.addEventListener('click', (event) => {
+            if (event.target === videoModal) {
+                shutdownAndCloseVideo();
+            }
+        });
+
+        // Close modal if user taps physical Escape key on keyboard
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && videoModal.classList.contains('active')) {
+                shutdownAndCloseVideo();
+            }
+        });
+    </script>
+</body>
+</html>
